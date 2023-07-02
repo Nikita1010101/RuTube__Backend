@@ -1,16 +1,101 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express'
-import { Subscription, User, Video } from '../models/models'
+import { validationResult } from 'express-validator/src/validation-result'
+import { UserModel } from '../models/user.model'
+import { VideoModel } from '../models/video.model'
+import { SubscriptionModel } from '../models/subscription.model'
 import { ISubscriptionDto, IUser, IUserDto } from '../types/user.type'
 import { Model } from 'sequelize'
+import UserService from '../services/user.service'
+import { ApiError } from '../exceptions/api.error'
 
 class UserController {
-	getAllUsers: RequestHandler<Record<string, any>, IUser[]> = async (
+	registration: RequestHandler<Record<string, any>, IUser> = async (
 		req: Request,
 		res: Response,
 		next: NextFunction
 	) => {
 		try {
-			const users = await User.findAll()
+			const errors = validationResult(req)
+			if (!errors.isEmpty()) {
+				return next(ApiError.BadRequest('Ошибка при валидации', errors.array()))
+			}
+
+			const { email, password } = req.body
+
+			const user = await UserService.registration(email, password, 'nike')
+
+			res.cookie('refreshToken', user.refreshToken, {
+				maxAge: 1000 * 60 * 60 * 24 * 30,
+				httpOnly: true
+			})
+
+			res.send(user)
+		} catch (error) {
+			next(error)
+		}
+	}
+
+	login: RequestHandler<Record<string, any>, IUser> = async (
+		req: Request,
+		res: Response,
+		next: NextFunction
+	) => {
+		try {
+			
+		} catch (error) {
+			next(error)
+		}
+	}
+
+	activate: RequestHandler<Record<string, any>, IUser> = async (
+		req: Request,
+		res: Response,
+		next: NextFunction
+	) => {
+		try {
+			const activationLink = req.params.link
+			await UserService.activate(activationLink)
+			return res.redirect(process.env.CLIENT_URL)
+		} catch (error) {
+			next(error)
+		}
+	}
+
+	logout: RequestHandler<Record<string, any>, IUser> = async (
+		req: Request,
+		res: Response,
+		next: NextFunction
+	) => {
+		try {
+			const { refreshToken } = req.cookies
+			const token = await UserService.logout(refreshToken)
+			res.clearCookie('refreshToken')
+			return res.json(token)
+		} catch (error) {
+			next(error)
+		}
+	}
+
+	refresh: RequestHandler<Record<string, any>, IUser> = async (
+		req: Request,
+		res: Response,
+		next: NextFunction
+	) => {
+		try {
+		} catch (error) {
+			next(error)
+		}
+	}
+
+	
+
+	getUsers: RequestHandler<Record<string, any>, IUser[]> = async (
+		req: Request,
+		res: Response,
+		next: NextFunction
+	) => {
+		try {
+			const users = await UserModel.findAll()
 
 			res.send(users)
 		} catch (error) {
@@ -18,7 +103,7 @@ class UserController {
 		}
 	}
 
-	getOneUser: RequestHandler<Record<string, any>, IUser> = async (
+	getUser: RequestHandler<Record<string, any>, IUser> = async (
 		req: Request,
 		res: Response,
 		next: NextFunction
@@ -26,11 +111,11 @@ class UserController {
 		try {
 			const { id } = req.params
 
-			const user = await User.findOne({ where: { id } })
+			const user = await UserModel.findOne({ where: { id } })
 
-			const videos = await Video.findAll({
+			const videos = await VideoModel.findAll({
 				where: { userId: user.dataValues.id },
-				include: { model: User }
+				include: { model: UserModel }
 			})
 
 			user.dataValues.videos = videos
@@ -49,7 +134,7 @@ class UserController {
 		try {
 			const { email, password } = req.body
 
-			const user = await User.findOne({ where: { email, password } })
+			const user = await UserModel.findOne({ where: { email, password } })
 
 			res.send(user)
 		} catch (error) {
@@ -65,7 +150,7 @@ class UserController {
 		try {
 			const { id, name, description } = req.body
 
-			const user = await User.findOne({ where: { id } })
+			const user = await UserModel.findOne({ where: { id } })
 
 			await user.update({ name, description })
 
@@ -84,12 +169,12 @@ class UserController {
 			const { id } = req.params
 
 			const subscriptionsId = (
-				await Subscription.findAll<Model<any, any>>({ where: { userId: id } })
+				await SubscriptionModel.findAll<Model<any, any>>({ where: { userId: id } })
 			).map(item => item.dataValues.channelId)
 
-			const user = await User.findOne<Model<any, IUser>>({ where: { id } })
+			const user = await UserModel.findOne<Model<any, IUser>>({ where: { id } })
 
-			const subscriptions = await User.findAll<Model<any, IUser[]>>({
+			const subscriptions = await UserModel.findAll<Model<any, IUser[]>>({
 				where: { id: subscriptionsId }
 			})
 
@@ -109,7 +194,7 @@ class UserController {
 		try {
 			const body = req.body
 
-			const user = await User.create(body)
+			const user = await UserModel.create(body)
 
 			res.send(user)
 		} catch (error) {
@@ -126,12 +211,12 @@ class UserController {
 			const { id } = req.params
 
 			const subscriptionsId = (
-				await Subscription.findAll({
+				await SubscriptionModel.findAll({
 					where: { userId: Number(id) }
 				})
 			).map(table => table.dataValues.channelId)
 
-			const subscriptions = await User.findAll({
+			const subscriptions = await UserModel.findAll({
 				where: { id: subscriptionsId }
 			})
 
@@ -149,9 +234,9 @@ class UserController {
 		try {
 			const { id } = req.params
 
-			const subscription = await User.findOne({
+			const subscription = await UserModel.findOne({
 				where: { id },
-				include: { model: Video, as: 'videos' }
+				include: { model: VideoModel, as: 'videos' }
 			})
 
 			res.send(subscription)
@@ -168,7 +253,7 @@ class UserController {
 		try {
 			const { userId, channelId } = req.query
 
-			const subscription = await Subscription.findAll({
+			const subscription = await SubscriptionModel.findAll({
 				where: { userId, channelId }
 			})
 
@@ -189,7 +274,7 @@ class UserController {
 			const { id } = req.params
 
 			const subscripionsLength = (
-				await Subscription.findAll({ where: { channelId: id } })
+				await SubscriptionModel.findAll({ where: { channelId: id } })
 			).length
 
 			res.send(String(subscripionsLength))
@@ -203,7 +288,7 @@ class UserController {
 			try {
 				const body = req.body
 
-				await Subscription.create(body)
+				await SubscriptionModel.create(body)
 
 				res.send({})
 			} catch (err) {
@@ -219,7 +304,7 @@ class UserController {
 		try {
 			const { userId, channelId } = req.body
 
-			await Subscription.destroy({ where: { userId, channelId } })
+			await SubscriptionModel.destroy({ where: { userId, channelId } })
 
 			res.send({})
 		} catch (err) {

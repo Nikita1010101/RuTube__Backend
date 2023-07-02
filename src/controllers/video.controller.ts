@@ -1,6 +1,10 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express'
 
-import { Video, Comment, User, Likes, Subscription } from '../models/models'
+import { UserModel } from '../models/user.model'
+import { VideoModel } from '../models/video.model'
+import { SubscriptionModel } from '../models/subscription.model'
+import { LikeModel } from '../models/like.model'
+
 import { ILikes, ILikesDto, IVideo } from '../types/video.type'
 import { Model } from 'sequelize'
 
@@ -31,8 +35,8 @@ class VideoController {
 			const { search } = req.query
 
 			const videos = (
-				await Video.findAll({
-					include: User
+				await VideoModel.findAll({
+					include: UserModel
 				})
 			).filter(video =>
 				video.dataValues.title
@@ -54,9 +58,9 @@ class VideoController {
 		try {
 			const { id } = req.params
 
-			const video = await Video.findOne({
+			const video = await VideoModel.findOne({
 				where: { id },
-				include: { model: User, as: 'user' }
+				include: { model: UserModel, as: 'user' }
 			})
 
 			res.send(video)
@@ -71,12 +75,12 @@ class VideoController {
 				const { id } = req.params
 
 				const subscriptionsId = (
-					await Subscription.findAll({ where: { userId: id } })
+					await SubscriptionModel.findAll({ where: { userId: id } })
 				).map(subscription => subscription.dataValues.channelId)
 
-				const videos = await Video.findAll({
+				const videos = await VideoModel.findAll({
 					where: { userId: subscriptionsId },
-					include: { model: User }
+					include: { model: UserModel }
 				})
 
 				res.send(videos)
@@ -94,13 +98,13 @@ class VideoController {
 			const { id } = req.params
 
 			const likesId = (
-				await Likes.findAll({ where: { userId: Number(id) } })
+				await LikeModel.findAll({ where: { userId: Number(id) } })
 			).map(likeId => likeId.dataValues.videoId)
 
-			const likedVideos = await Video.findAll<Model<any, IVideo[]>>({
+			const likedVideos = await VideoModel.findAll<Model<any, IVideo[]>>({
 				where: { id: likesId },
 				include: {
-					model: User
+					model: UserModel
 				}
 			})
 
@@ -118,7 +122,7 @@ class VideoController {
 		try {
 			const { id } = req.params
 
-			const likes = await Likes.findAll({
+			const likes = await LikeModel.findAll({
 				where: { id }
 			})
 
@@ -137,7 +141,7 @@ class VideoController {
 			const { id } = req.params
 
 			const likesLength = (
-				await Likes.findAll({
+				await LikeModel.findAll({
 					where: { videoId: Number(id) }
 				})
 			).length
@@ -156,7 +160,7 @@ class VideoController {
 		try {
 			const { userId, videoId } = req.query
 
-			const like = await Likes.findAll({ where: { userId, videoId } })
+			const like = await LikeModel.findAll({ where: { userId, videoId } })
 
 			const isLike = like.length !== 0
 
@@ -174,7 +178,7 @@ class VideoController {
 		try {
 			const { id } = req.body
 
-			const video = await Video.findOne({ where: { id } })
+			const video = await VideoModel.findOne({ where: { id } })
 
 			await video.update({ views: video.dataValues.views + 1 })
 
@@ -192,7 +196,7 @@ class VideoController {
 		try {
 			const body = req.body
 
-			await Likes.create(body)
+			await LikeModel.create(body)
 
 			res.send({})
 		} catch (err) {
@@ -208,7 +212,7 @@ class VideoController {
 		try {
 			const { userId, videoId } = req.body
 
-			await Likes.destroy({ where: { userId, videoId } })
+			await LikeModel.destroy({ where: { userId, videoId } })
 
 			res.send({})
 		} catch (err) {

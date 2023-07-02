@@ -11,8 +11,11 @@ router.get('/liked/:id', videoController.getLiked)
 router.get('/likes/:id', videoController.getLikes)
 router.get('/likes', videoController.checkLike)
 router.get('/likes-length/:id', videoController.getLikesLength)
-router.patch('/view', videoController.addView)
+
 router.post('/like', videoController.addLike)
+
+router.patch('/view', videoController.addView)
+
 router.delete('/like', videoController.removeLike)
 
 export default router

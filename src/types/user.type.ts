@@ -14,9 +14,13 @@ interface IUser {
 }
 
 interface IUserDto {
+	id: number
 	email: string
-	password: string
 	name: string
+	description: string
+	avatarPath: string
+	isActivated: boolean
+	activationLink: string
 }
 
 interface ISubscription {
