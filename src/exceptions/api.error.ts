@@ -1,19 +1,22 @@
-import { ValidationError } from "sequelize/types/errors"
-
 export class ApiError extends Error {
-	constructor(
-		public status: number,
-		message: string,
-		public errors: any = []
-	) {
-		super(message)
-	}
+  public status: number
+  public errors: unknown[]
 
-	static UnauthorizedError() {
-		return new ApiError(401, 'Пользователь не авторизован!')
-	}
+  constructor(status: number, message: string, errors: unknown[] = []) {
+    super(message)
+    this.status = status
+    this.errors = errors
+  }
 
-	static BadRequest(message: string, errors: any = []) {
-		return new ApiError(400, message, errors)
-	}
+  static InternalServerError(message: string, errors: unknown[] = []) {
+    return new ApiError(500, message, errors)
+  }
+
+  static UnauthorizedError() {
+    return new ApiError(401, 'Пользователь не авторизован!')
+  }
+
+  static BadRequest(message: string, errors: unknown[] = []) {
+    return new ApiError(400, message, errors)
+  }
 }

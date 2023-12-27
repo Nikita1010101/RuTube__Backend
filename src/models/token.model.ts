@@ -1,7 +1,6 @@
-import sequelize from '../db'
 import { DataTypes } from 'sequelize'
 
-export const TokenModel = sequelize.define('token', {
+export const tokenModel_instance = {
 	id: {
 		type: DataTypes.INTEGER,
 		primaryKey: true,
@@ -9,4 +8,4 @@ export const TokenModel = sequelize.define('token', {
 		allowNull: false
 	},
 	refreshToken: { type: DataTypes.STRING }
-})
+}

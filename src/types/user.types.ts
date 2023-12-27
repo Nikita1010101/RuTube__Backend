@@ -1,30 +1,25 @@
-import { IVideo } from './video.type'
-
-interface IUser {
-	id?: number
-	email: string
-	password: string
-	name: string
-	description: string
-	avatarPath: string
-	subscripions?: Array<IUser>
-	subscribers?: Array<IUser>
-	liked?: Array<IVideo>
-	videos?: Array<IVideo>
-}
+import { TVideo } from './video.types'
 
 interface IUserDto {
-	id: number
+	id?: number
 	email: string
 	name: string
 	description: string
 	avatarPath: string
 	isActivated: boolean
 	activationLink: string
+	subscripions?: IUser[]
+	subscribers?: IUser[]
+	liked?: TVideo[]
+	videos?: TVideo[]
+}
+
+interface IUser extends IUserDto {
+	password: string
 }
 
 interface ISubscription {
-	id?: number
+	id: number
 	userId: number
 	channelId: number
 }

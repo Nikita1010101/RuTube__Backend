@@ -1,21 +1,21 @@
 import Router from 'express'
-import videoController from '../controllers/video.controller'
+
+import { VideoController } from '../controllers/video.controller'
+import { videoUpload } from '../config/multer.config'
 
 const router = Router()
 
-// router.post('/', videoController.create)
-router.get('/', videoController.getAllVideos)
-router.get('/:id', videoController.getOneVideo)
-router.get('/subscriptions/:id', videoController.getAllSubscripionVideos)
-router.get('/liked/:id', videoController.getLiked)
-router.get('/likes/:id', videoController.getLikes)
-router.get('/likes', videoController.checkLike)
-router.get('/likes-length/:id', videoController.getLikesLength)
+const { addView, create, getAll, getOne } = VideoController
 
-router.post('/like', videoController.addLike)
+router.get('/', getAll)
+router.get('/:videoId', getOne)
 
-router.patch('/view', videoController.addView)
+router.post('/create', videoUpload.single('video'), create)
 
-router.delete('/like', videoController.removeLike)
+router.patch('/view', addView)
 
-export default router
+export const VideoRouter = router
+
+
+
+

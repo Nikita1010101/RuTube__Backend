@@ -1,12 +1,15 @@
 import Router from 'express'
-import commentController from '../controllers/comment.controller'
+
+import { CommentController } from '../controllers/comment.controller'
 
 const router = Router()
 
-router.get('/:id', commentController.getAllComments)
+const { add, getAll, remove } = CommentController
 
-router.post('/', commentController.addComment)
+router.get('/:videoId', getAll)
 
-router.delete('/', commentController.removeComment)
+router.post('/', add)
 
-export default router
+router.delete('/:commentId', remove)
+
+export const CommentRouter = router

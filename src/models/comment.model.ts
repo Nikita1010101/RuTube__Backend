@@ -1,7 +1,6 @@
-import sequelize from '../db'
 import { DataTypes } from 'sequelize'
 
-export const CommentModel = sequelize.define('comment', {
+export const commentModel_instance = {
 	id: {
 		type: DataTypes.INTEGER,
 		primaryKey: true,
@@ -11,4 +10,4 @@ export const CommentModel = sequelize.define('comment', {
 	avatarPath: { type: DataTypes.STRING },
 	userName: { type: DataTypes.STRING },
 	content: { type: DataTypes.STRING }
-})
+}

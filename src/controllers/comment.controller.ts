@@ -1,57 +1,38 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express'
-import { IComment, ICommentDto } from '../types/comment.type'
-import { CommentModel } from '../models/comment.model'
 
-class CommentController {
-	getAllComments: RequestHandler<Record<string, any>, any, IComment[]> = async (
-		req: Request,
-		res: Response,
-		next: NextFunction
-	) => {
-		try {
-			const { id } = req.params
+import { IComment } from '../types/comment.types'
+import { CommentService } from '../services/comment/comment.service'
 
-			const comments = await CommentModel.findAll({ where: { videoId: id } })
+class CommentController_class {
+  public getAll: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params as { id: string }
+      const comments = await CommentService.getAllById(Number(id))
+      res.send(comments)
+    } catch (error) {
+      next(error)
+    }
+  }
 
-			res.send(comments)
-		} catch (error) {
-			next()
-		}
-	}
+  public add: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const body = req.body as IComment
+      await CommentService.add(body)
+      res.send({})
+    } catch (error) {
+      next(error)
+    }
+  }
 
-	addComment: RequestHandler<Record<string, any>, any, ICommentDto> = async (
-		req: Request,
-		res: Response,
-		next: NextFunction
-	) => {
-		try {
-			const body = req.body
-
-			await CommentModel.create(body)
-
-			res.send({})
-		} catch (error) {
-			next()
-		}
-	}
-
-	removeComment: RequestHandler<Record<string, any>, any, ICommentDto> = async (
-		req: Request,
-		res: Response,
-		next: NextFunction
-	) => {
-		try {
-			const { avatarPath, userName, content, videoId } = req.body
-
-			await CommentModel.destroy({
-				where: { avatarPath, userName, content, videoId }
-			})
-
-			res.send({})
-		} catch (error) {
-			next()
-		}
-	}
+  public remove: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params as { id: string }
+      await CommentService.remove(Number(id))
+      res.send({})
+    } catch (error) {
+      next(error)
+    }
+  }
 }
 
-export default new CommentController()
+export const CommentController = new CommentController_class()

@@ -1,7 +1,6 @@
-import sequelize from '../db'
 import { DataTypes } from 'sequelize'
 
-export const UserModel = sequelize.define('user', {
+export const userModel_instance = {
 	id: {
 		type: DataTypes.INTEGER,
 		primaryKey: true,
@@ -15,4 +14,4 @@ export const UserModel = sequelize.define('user', {
 	avatarPath: { type: DataTypes.STRING, defaultValue: '' },
 	isActivated: { type: DataTypes.BOOLEAN, defaultValue: false },
 	activationLink: { type: DataTypes.STRING }
-})
+}
