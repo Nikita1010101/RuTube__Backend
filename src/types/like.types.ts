@@ -1,12 +1,5 @@
-interface ILike {
-	id?: number 
-	userId: number
-	videoId: number
-}
-
-interface ILikeDto {
+export type TLike = {
+  id: number
   userId: number
   videoId: number
 }
-
-export { ILike, ILikeDto }

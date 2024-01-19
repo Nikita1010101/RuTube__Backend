@@ -1,8 +1,10 @@
 import nodemailer from 'nodemailer'
 
-class EmailService_class {
-	public transporter: any
+import type { Transporter } from 'nodemailer'
 
+class EmailService_class {
+	private transporter: Transporter
+	
 	constructor() {
 		this.transporter = nodemailer.createTransport({
 			host: process.env.SMTP_HOST,
@@ -17,18 +19,26 @@ class EmailService_class {
 		})
 	}
 
-	async sendActiovationMail(email: string, link: string) {
+	private getMailTemplate = (url: string) => {
+		const template = `
+			<div>
+				<h1>Для активации перейдите по ссылке</h1>
+				<a href="${url}">${url}</a>
+			</div>
+		`
+		
+		return template
+	}
+
+	public async sendActivationMail(email: string, url: string) {
+		console.log('this is current email', email)
+
 		await this.transporter.sendMail({
 			from: process.env.SMTP_NAME,
 			to: email,
-			subject: `Активация аккаунта на ${process.env.APP_API}`,
+			subject: `Активация аккаунта на ${process.env.API_URL}`,
 			text: '',
-			html: `
-          <div>
-            <h1>Для активации перейдите по ссылке</h1>
-            <a href="${link}">${link}</a>
-          </div>
-        `
+			html: this.getMailTemplate(url)
 		})
 	}
 }

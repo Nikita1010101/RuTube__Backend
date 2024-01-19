@@ -1,32 +1,23 @@
 import { TVideo } from './video.types'
 
-interface IUserDto {
-	id?: number
-	email: string
-	name: string
-	description: string
-	avatarPath: string
-	isActivated: boolean
-	activationLink: string
-	subscripions?: IUser[]
-	subscribers?: IUser[]
-	liked?: TVideo[]
-	videos?: TVideo[]
+export type TUserAttachModels = {
+  subscriptions?: TUser[]
+  subscribers?: TUser[]
+  likes?: TVideo[]
+  videos?: TVideo[]
 }
 
-interface IUser extends IUserDto {
+export type TUser = TUserAttachModels & {
+  id: number
+  email: string
 	password: string
+  name: string
+  description: string
+  avatarUrl: string
+  isActivated: boolean
+  activationId: string
 }
 
-interface ISubscription {
-	id: number
-	userId: number
-	channelId: number
-}
+export type TUserDto = Omit<TUser, 'password'>
 
-interface ISubscriptionDto {
-	userId: number
-	channelId: number
-}
-
-export { IUser, IUserDto, ISubscription, ISubscriptionDto }
+export type TUserKeys = keyof TUser

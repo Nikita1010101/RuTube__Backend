@@ -1,8 +1,8 @@
-export enum MODEL {
-  COMMENT = 'comment',
-  LIKE = 'like',
-  SUBSCRIPTION = 'subscription',
-  TOKEN = 'token',
-  USER = 'user',
-  VIDEO = 'video'
+export const MODEL = {
+  comment: 'comment',
+  like: 'like',
+  subscription: 'subscription',
+  token: 'token',
+  user: 'user',
+  video: 'video',
 }

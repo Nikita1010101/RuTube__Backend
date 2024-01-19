@@ -1,64 +1,114 @@
 import { Model } from 'sequelize'
 
-import { SubscriptionModel, UserModel } from '../../models/index.model'
-import { VideoHelperService } from '../video/video.helper.service'
-import { ISubscription, IUser } from '../../types/user.types'
-import { convertModelToArray } from '../../utils/convert-model-to-array/convert-model-to-array'
-import { convertModelsToValuesArray } from '../../utils/convert-models-to-array/convert-models-to-id-array'
+import { SubscriptionModel, UserModel, VideoModel } from '../../models/index.model'
+import { TUser } from '../../types/user.types'
+import { convertModelToArray } from '../../helpers/convert-model-to-array/convert-model-to-array'
+import { convertModelsToValuesArray } from '../../helpers/convert-models-to-values-array/convert-models-to-values-array'
+import { TSubscription } from '../../types/subscription.types'
+import { TVideo } from '../../types/video.types'
+import { ApiError } from '../../exceptions/api.error'
+import { SUBSCRIPTION_ERROR } from '../../constants/errors.constant'
 
 class SubscriptionService_class {
+  public async change(profileId: number, channelId: number) {
+    if (profileId === channelId) throw ApiError.BadRequest(SUBSCRIPTION_ERROR.idNotBeEquals)
+
+    const subscription = await SubscriptionModel.findOne<Model<TSubscription>>({
+      where: { profileId, channelId },
+    })
+
+    subscription
+      ? await SubscriptionModel.destroy<Model<TSubscription>>({ where: { profileId, channelId } })
+      : await SubscriptionModel.create<Model<TSubscription>>({ profileId, channelId })
+
+    return true
+  }
+
+  public async check(profileId: number, channelId: number) {
+    if (profileId === channelId) throw ApiError.BadRequest(SUBSCRIPTION_ERROR.idNotBeEquals)
+
+    const subscription = await SubscriptionModel.count<Model<TSubscription>>({
+      where: { profileId, channelId },
+    })
+
+    const isSubscription = Boolean(subscription)
+
+    return { isSubscription }
+  }
+
   public async getAll(profileId: number) {
-    const subscriptions = await SubscriptionModel.findAll<Model<ISubscription>>({ where: { userId: profileId } })
-    const subscriptionsId = convertModelsToValuesArray<ISubscription>(subscriptions, 'channelId')
-    const users = await UserModel.findAll({ where: { id: subscriptionsId } })
+    const subscriptions = await SubscriptionModel.findAll<Model<TSubscription>>({
+      attributes: ['channelId'],
+      where: { profileId },
+    })
+    const subscriptionsId = convertModelsToValuesArray<TSubscription>(subscriptions, 'channelId')
+    const users = await UserModel.findAll({
+      attributes: ['id', 'name', 'avatarUrl'],
+      where: { id: subscriptionsId },
+      order: [['updatedAt', 'DESC']],
+    })
+
     return users
   }
 
+  public async getLength(profileId: number) {
+    const length = await SubscriptionModel.count<Model<TSubscription>>({
+      where: { profileId },
+    })
+
+    return { length }
+  }
+
+  public async getOne(channelId: number) {
+    const user = await UserModel.findOne<Model<TUser>>({
+      attributes: ['id', 'name', 'description', 'avatarUrl'],
+      where: { id: channelId },
+    })
+
+    const videos = await VideoModel.findAll<Model<TVideo>>({
+      attributes: {
+        exclude: ['description', 'videoUrl', 'public', 'userId'],
+      },
+      where: {
+        userId: channelId,
+        public: true,
+      },
+      include: {
+        attributes: ['id', 'name', 'avatarUrl'],
+        model: UserModel,
+      },
+    })
+
+    user.dataValues.videos = convertModelToArray(videos)
+
+    return user
+  }
+
   public async getVideos(profileId: number) {
-    const subscriptions = await SubscriptionModel.findAll({ where: { userId: profileId } })
-    const subscriptionsId = convertModelsToValuesArray<ISubscription>(subscriptions, 'channelId')
-    const videos = await VideoHelperService.getAllByUserId(subscriptionsId)
+    const subscriptions = await SubscriptionModel.findAll<Model<TSubscription>>({
+      attributes: ['channelId'],
+      where: { profileId },
+    })
+
+    const subscriptionsId = convertModelsToValuesArray<TSubscription>(subscriptions, 'channelId')
+
+    const videos = await VideoModel.findAll<Model<TVideo>>({
+      attributes: {
+        exclude: ['description', 'videoUrl', 'public', 'userId'],
+      },
+      where: { userId: subscriptionsId },
+      order: [['updatedAt', 'DESC']],
+      include: {
+        attributes: ['id', 'name', 'avatarUrl'],
+        model: UserModel,
+      },
+    })
     return videos
   }
 
-  public async getOne(subscriptionId: number) {
-    const subscription = await UserModel.findOne<Model<IUser>>({ where: { id: subscriptionId } })
-    const videos = await VideoHelperService.getAllByUserId(Number(subscriptionId))
-    subscription.dataValues.videos = convertModelToArray(videos)
-    return subscription
-  }
+  public async removeAll(profileId: number) {
+    await SubscriptionModel.destroy<Model<TSubscription>>({ where: { profileId } })
 
-  public async check(userId: number, channelId: number) {
-    const subscription = await SubscriptionModel.findAll<Model<ISubscription>>({
-      where: { userId, channelId },
-    })
-    const isSubscription = subscription.length !== 0
-    return isSubscription
-  }
-
-  public async getLength(subscriptionId: number) {
-    const subscripions = await SubscriptionModel.findAll<Model<ISubscription>>({
-      where: { channelId: subscriptionId },
-    })
-    const length = subscripions.length
-    return length
-  }
-
-  public async change({ userId, channelId }: ISubscription) {
-    const subscripion = await SubscriptionModel.findOne({
-      where: { userId: Number(userId), channelId: Number(channelId) },
-    })
-
-    if (subscripion) {
-      await SubscriptionModel.destroy({
-        where: { userId: Number(userId), channelId: Number(channelId) },
-      })
-    }
-
-    await SubscriptionModel.create<Model<ISubscription>>({
-      userId: Number(userId),
-      channelId: Number(channelId),
-    })
     return true
   }
 }

@@ -1,8 +1,7 @@
-export interface IBodyLogin {
-  email: string
-  password: string
-}
+import { TUser } from './user.types'
 
-export interface IBodyRegistration extends IBodyLogin {
-  name: string
-}
+export type TEditBody = Partial<Pick<TUser, 'avatarUrl' | 'description' | 'name'>>
+
+export type TLoginBody = Pick<TUser, 'email' | 'password'>
+
+export type TRegistrationBody = Pick<TUser, 'email' | 'name' | 'password'>

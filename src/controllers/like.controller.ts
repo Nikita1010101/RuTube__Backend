@@ -1,15 +1,20 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express'
 
 import { LikeService } from '../services/like/like.service'
-import { ILike } from '../types/like.types'
-import { ParsedQs } from '../types/request.types'
+import { TLikeQuery } from '../types/request.types'
+import { TLike } from '../types/like.types'
+import { TUser } from '../types/user.types'
+import { TVideoId } from '../types/id.types'
 
 class LikeController_class {
-  public getVideos: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+  public change: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params as { id: string }
-      const video = await LikeService.getVideos(Number(id))
-      res.send(video)
+      const { id: profileId } = req.body.user as TUser
+      const { videoId } = req.body as TVideoId
+
+      await LikeService.change(+profileId, +videoId)
+
+      res.send({ success: true })
     } catch (error) {
       next(error)
     }
@@ -17,8 +22,11 @@ class LikeController_class {
 
   public check: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { userId, videoId } = req.query as ParsedQs & ILike
-      const isLike = await LikeService.check(Number(userId), Number(videoId))
+      const { id: profileId } = req.body.user as TUser
+      const { videoId } = req.query as TVideoId
+
+      const isLike = await LikeService.check(+profileId, +videoId)
+
       res.send(isLike)
     } catch (error) {
       next(error)
@@ -27,19 +35,23 @@ class LikeController_class {
 
   public getLength: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { videoId } = req.params as { videoId: string }
-      const length = await LikeService.getLength(Number(videoId))
-      res.send(String(length))
+      const { videoId } = req.params as TVideoId
+
+      const length = await LikeService.getLength(+videoId)
+
+      res.send(length)
     } catch (error) {
       next(error)
     }
   }
 
-  public change: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+  public getVideos: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { userId, videoId } = req.body as ILike
-      await LikeService.change(Number(userId), Number(videoId))
-      res.send({})
+      const { id: profileId } = req.body.user as TUser
+
+      const video = await LikeService.getVideos(+profileId)
+
+      res.send(video)
     } catch (error) {
       next(error)
     }

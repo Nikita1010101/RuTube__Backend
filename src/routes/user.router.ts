@@ -4,9 +4,8 @@ import { UserController } from '../controllers/user.controller'
 
 const router = Router()
 
-const { getAll, getOne } = UserController
+const { getOne } = UserController
 
-router.get('/', getAll)
-router.get('/:id', getOne)
+router.get('/:userId', getOne)
 
 export const UserRouter = router

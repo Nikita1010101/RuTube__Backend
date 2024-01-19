@@ -1,52 +1,60 @@
 import { Model } from 'sequelize'
 
 import { LikeModel, UserModel, VideoModel } from '../../models/index.model'
-import { TVideo } from '../../types/video.types'
-import { ILike } from '../../types/like.types'
+import { TLike } from '../../types/like.types'
 import { ApiError } from '../../exceptions/api.error'
-import { convertModelsToValuesArray } from '../../utils/convert-models-to-array/convert-models-to-id-array'
 import { TOTAL_ERROR } from '../../constants/errors.constant'
+import { convertModelsToValuesArray } from '../../helpers/convert-models-to-values-array/convert-models-to-values-array'
 
 class LikeService_class {
-  public async getVideos(id: number) {
-    if (!id) {
-      throw ApiError.BadRequest(TOTAL_ERROR.notCorrectId)
-    }
+  public async change(userId: number, videoId: number) {
+    const like = await LikeModel.findOne<Model<TLike>>({ where: { userId, videoId } })
 
-    const likes = await LikeModel.findAll<Model<ILike>>({ where: { userId: id } })
-    // const likesId = likes.map(likeId => likeId.dataValues.videoId)
-    const likesId = convertModelsToValuesArray<ILike>(likes, 'videoId')
-    const likedVideos = await VideoModel.findAll<Model<TVideo>>({
-      where: { id: likesId },
-      include: { model: UserModel },
-    })
-    return likedVideos
+    like ? like.destroy() : await LikeModel.create<Model<TLike>>({ userId, videoId })
+
+    return true
   }
 
   public async check(userId: number, videoId: number) {
-    const likes = await LikeModel.findAll<Model<ILike>>({ where: { userId, videoId } })
+    const likes = await LikeModel.findAll<Model<TLike>>({ where: { userId, videoId } })
+
     const isLike = likes.length !== 0
+
     return isLike
   }
 
-  public async getLength(id: number) {
-    const likes = await LikeModel.findAll<Model<ILike>>({ where: { videoId: Number(id) } })
-    const likesLength = likes.length
-    return likesLength
+  public async getLength(videoId: number) {
+    const likesLength = await LikeModel.count<Model<TLike>>({ where: { videoId } })
+
+    return String(likesLength)
   }
 
-  public async change(userId: number, videoId: number) {
-    const like = await LikeModel.findOne<Model<ILike>>({
-      where: { userId: userId, videoId: videoId },
+  public async getVideos(userId: number) {
+    if (!userId) throw ApiError.BadRequest(TOTAL_ERROR.notCorrectId)
+
+    const likes = await LikeModel.findAll<Model<TLike>>({ where: { userId } })
+
+    const likedId = convertModelsToValuesArray<TLike>(likes, 'videoId')
+
+    const videos = await VideoModel.findAll({
+      attributes: {
+        exclude: ['description', 'videoUrl', 'public', 'userId']
+      },
+      where: { id: likedId },
+      order: [['updatedAt', 'DESC']],
+      include: {
+        model: UserModel,
+        attributes: {
+          exclude: ['email', 'password', 'description', 'activationId', 'isActivated'],
+        },
+      },
     })
 
-    if (like) {
-      await LikeModel.destroy<Model<ILike>>({
-        where: { userId: userId, videoId: videoId },
-      })
-    } else {
-      await LikeModel.create<Model<ILike>>({ userId: userId, videoId: videoId })
-    }
+    return videos
+  }
+
+  public async removeAll(profileId: number) {
+    await LikeModel.destroy<Model<TLike>>({ where: { userId: profileId } })
 
     return true
   }

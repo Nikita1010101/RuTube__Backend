@@ -1,101 +1,120 @@
+import { Model } from 'sequelize'
 import bcrypt from 'bcrypt'
-import { v4 } from 'uuid'
+import { v4 as createUniqueId } from 'uuid'
 
 import { UserDto } from '../../dtos/user.dto'
 import { ApiError } from '../../exceptions/api.error'
 import { UserModel } from '../../models/index.model'
 import { TokenService } from '../token/token.service'
 import { EmailService } from '../email/email.service'
-import { IUser } from '../../types/user.types'
 import { AUTH_ERROR } from '../../constants/errors.constant'
+import { TEditBody } from '../../types/auth.types'
+import { CommentService } from '../comment/comment.service'
+import { LikeService } from '../like/like.service'
+import { SubscriptionService } from '../subscription/subscription.service'
+import { VideoService } from '../video/video.service'
+import { TUser } from '../../types/user.types'
 
 class AuthService_class {
-  private async convertData(user: unknown) {
-    const userDto = new UserDto(user)
-    const tokens = await TokenService.genereteTokens({ ...userDto })
-    await TokenService.saveToken(userDto.id, tokens.refreshToken)
-    return { ...tokens, user: userDto }
-  }
+  public async activate(activationId: string) {
+    const user = await UserModel.findOne<Model<TUser>>({ where: { activationId } })
 
-  public async registration(email: string, password: string, name: string) {
-    const isAccaunt = await UserModel.findOne({ where: { email } })
-
-    if (isAccaunt) {
-      throw ApiError.BadRequest(AUTH_ERROR.emailNotExist(email))
-    }
-
-    const hashPassword = await bcrypt.hash(password, 5)
-    const activationLink = v4()
-
-    const user = await UserModel.create({
-      email,
-      password: hashPassword,
-      name,
-      activationLink,
-    })
-    await EmailService.sendActiovationMail(
-      email,
-      `${process.env.APP_API}/api/user/activate/${activationLink}`
-    )
-
-    return await this.convertData(user)
-  }
-
-  public async login(email: string, password: string) {
-    const user = await UserModel.findOne({
-      where: { email },
-    })
-
-    if (!user) {
-      throw ApiError.BadRequest(AUTH_ERROR.userNotFound)
-    }
-
-    const isPasswordEquals = await bcrypt.compare(password, user.dataValues.password)
-
-    if (!isPasswordEquals) {
-      throw ApiError.BadRequest(AUTH_ERROR.notCorrectPassword)
-    }
-
-    return await this.convertData(user)
-  }
-
-  public async logout(refreshToken: string) {
-    const token = await TokenService.removeToken(refreshToken)
-    return token
-  }
-
-  public async activate(activationLink: string) {
-    const user = await UserModel.findOne({ where: { activationLink } })
-
-    if (!user) {
-      throw ApiError.BadRequest(AUTH_ERROR.notCorrectLink)
-    }
+    if (!user) throw ApiError.BadRequest(AUTH_ERROR.notCorrectLink)
 
     await user.update({ isActivated: true })
   }
 
+  private async convertData(user: TUser) {
+    const userDto = new UserDto(user)
+    const tokens = await TokenService.generate({ ...userDto })
+    await TokenService.save(userDto.id, tokens.refreshToken)
+    return { ...tokens, user: userDto }
+  }
+
+  public async edit(userId: number, body: TEditBody) {
+    const user = await UserModel.findOne<Model<TUser>>({ where: { id: userId } })
+
+    await user.update(body)
+    
+    return true
+  }
+
+  public async logout(refreshToken: string) {
+    if (!refreshToken) throw ApiError.UnauthorizedError()
+
+    await TokenService.remove(refreshToken)
+
+    return true
+  }
+
+  public async login(email: string, password: string) {
+    const user = await UserModel.findOne<Model<TUser>>({
+      where: { email, isActivated: true },
+    })
+
+    if (!user) throw ApiError.BadRequest(AUTH_ERROR.userNotFound)
+
+    const isPasswordEquals = await bcrypt.compare(password, user.dataValues.password)
+
+    if (!isPasswordEquals) throw ApiError.BadRequest(AUTH_ERROR.notCorrectPassword)
+
+    return await this.convertData(user.dataValues)
+  }
+
   public async refresh(refreshToken: string) {
+    if (!refreshToken) throw ApiError.UnauthorizedError()
+
+    const tokenData = TokenService.validateRefreshToken(refreshToken)
+    const tokenFromDb = await TokenService.find(refreshToken)
+
+    if (!tokenData || !tokenFromDb) throw ApiError.UnauthorizedError()
+
+    const user = await UserModel.findOne<Model<TUser>>({
+      where: { id: tokenFromDb.dataValues.userId },
+    })
+
+    return await this.convertData(user.dataValues)
+  }
+
+  public async registration(email: string, password: string, name: string) {
+    const account = await UserModel.findOne<Model<TUser>>({ where: { email } })
+
+    if (account) throw ApiError.BadRequest(AUTH_ERROR.emailNotExist(email))
+
+    const activationId = createUniqueId()
+    const activationUrl = `${process.env.API_URL}/api/auth/activate/${activationId}`
+
+    const user = await UserModel.create<Model<TUser>>({ email, password, name, activationId })
+
+    await EmailService.sendActivationMail(email, activationUrl)
+
+    return await this.convertData(user.dataValues)
+  }
+
+  public async remove(refreshToken: string) {
     if (!refreshToken) {
+      console.log('this is error')
       throw ApiError.UnauthorizedError()
     }
 
     const tokenData = TokenService.validateRefreshToken(refreshToken)
-    const tokenFromDb = await TokenService.findToken(refreshToken)
+    const tokenFromDb = await TokenService.find(refreshToken)
 
-    if (!tokenData || !tokenFromDb) {
-      throw ApiError.UnauthorizedError()
-    }
+    if (!tokenData || !tokenFromDb) throw ApiError.UnauthorizedError()
 
-    const user = await UserModel.findOne({
+    const user = await UserModel.findOne<Model<TUser>>({
       where: { id: tokenFromDb.dataValues.userId },
     })
 
-    return await this.convertData(user)
-  }
+    const userId = user.dataValues.id
 
-  public async edit({ id, ...data }: IUser) {
-    const user = await UserModel.findOne({ where: { id } })
-    await user.update({ data })
+    await CommentService.removeAll(userId)
+    await LikeService.removeAll(userId)
+    await SubscriptionService.removeAll(userId)
+    await TokenService.remove(refreshToken)
+    await VideoService.removeAll(userId)
+    await user.destroy()
+
     return true
   }
 }

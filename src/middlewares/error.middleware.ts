@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
+
 import { ApiError } from '../exceptions/api.error'
 
 export const errorMiddleWare = (

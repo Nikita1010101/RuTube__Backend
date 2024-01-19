@@ -1,17 +1,16 @@
 import { Router } from 'express'
 
 import { LikeController } from '../controllers/like.controller'
+import { authMiddleWare } from '../middlewares/auth.middleware'
 
 const router = Router()
 
 const { change, check, getLength, getVideos } = LikeController
 
-router.get('/', getVideos)
-router.get('/check/:videoId', check)
-router.get('/length/:videoId', getLength)
+router.get('/video', authMiddleWare, getVideos)
+router.get('/check/:videoId', authMiddleWare, check)
+router.get('/length/:videoId', authMiddleWare, getLength)
 
 router.post('/change', change)
-
-// router.delete('/remove/:videoId', remove)
 
 export const LikeRouter = router

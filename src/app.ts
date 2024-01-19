@@ -1,5 +1,5 @@
 import dotenv from 'dotenv'
-import expess from 'express'
+import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 
@@ -12,16 +12,16 @@ import { MediaRouter } from './routes/media.router'
 
 const PORT = process.env.PORT || 7000
 
-const app = expess()
+const app = express()
 
 app.use(cors({
 	credentials: true,
 	origin: process.env.CLIENT_URL
 }))
-app.use(expess.json())
+app.use(express.json())
 app.use(cookieParser())
 app.use('/api', MainRouter)
-app.use('/media', MediaRouter)
+app.use('/uploads', MediaRouter)
 app.use(errorMiddleWare)
 
 const start = async () => {

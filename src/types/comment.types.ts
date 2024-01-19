@@ -1,12 +1,15 @@
-interface ICommentDto {
-  id: string
-  avatarPath: string
-  userName: string
-  content: string
+import { TCommentId } from "./id.types"
+import { TUser } from "./user.types"
+
+export type TCommentAttachModels = {
+  user?: TUser
 }
 
-interface IComment extends ICommentDto {
+export type TComment = TCommentAttachModels & {
+  id: string
+  content: string
+  userId: number
   videoId: number
 }
 
-export { IComment, ICommentDto }
+export type TEditComment = Pick<TComment, 'content'> & TCommentId

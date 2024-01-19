@@ -1,35 +1,51 @@
 import { Model } from 'sequelize'
 
 import { CommentModel } from '../../models/index.model'
-import { IComment } from '../../types/comment.types'
+import { TComment } from '../../types/comment.types'
 import { ApiError } from '../../exceptions/api.error'
 import { COMMENT_ERROR, TOTAL_ERROR } from '../../constants/errors.constant'
 
 class CommentService_class {
-  public async getAllById(id: number) {
-    if (!id) {
-      throw ApiError.BadRequest(TOTAL_ERROR.notCorrectId)
-    } 
+  public async add(body: TComment) {
+    if (!body) throw ApiError.BadRequest(COMMENT_ERROR.notCorrectBody)
 
-    const comments = await CommentModel.findAll<Model<IComment>>({ where: { videoId: id } })
-    return comments
-  }
+    await CommentModel.create<Model<TComment>>(body)
 
-  public async add(body: IComment) {
-    if (!body) {
-      throw ApiError.BadRequest(COMMENT_ERROR.notCorrectBody)
-    } 
-
-    await CommentModel.create<Model<IComment>>(body)
     return true
   }
 
-  public async remove(id: number) {
-    if (!id) {
-      throw ApiError.BadRequest(TOTAL_ERROR.notCorrectId)
-    } 
+  public async edit(commentId: number, content: string) {
+    const comment = await CommentModel.findOne<Model<TComment>>({ where: { id: commentId } })
 
-    await CommentModel.destroy({ where: { id } })
+    if (!comment) throw ApiError.BadRequest(COMMENT_ERROR.commentNotFound)
+
+    await comment.update({ content })
+
+    return true
+  }
+
+  public async getAll(videoId: number) {
+    if (!videoId) throw ApiError.BadRequest(TOTAL_ERROR.notCorrectId)
+
+    const comments = await CommentModel.findAll<Model<TComment>>({
+      where: { videoId },
+      order: [['updatedAt', 'DESC']],
+    })
+
+    return comments
+  }
+
+  public async remove(commentId: number) {
+    if (!commentId) throw ApiError.BadRequest(TOTAL_ERROR.notCorrectId)
+
+    await CommentModel.destroy({ where: { id: commentId } })
+
+    return true
+  }
+
+  public async removeAll(profileId: number) {
+    await CommentModel.destroy<Model<TComment>>({ where: { userId: profileId } })
+
     return true
   }
 }

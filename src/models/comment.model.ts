@@ -7,7 +7,5 @@ export const commentModel_instance = {
 		autoIncrement: true,
 		allowNull: false
 	},
-	avatarPath: { type: DataTypes.STRING },
-	userName: { type: DataTypes.STRING },
-	content: { type: DataTypes.STRING }
+	content: { type: DataTypes.STRING(4095) }
 }

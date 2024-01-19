@@ -1,21 +1,22 @@
 import { Router } from 'express'
-import { body } from 'express-validator'
+
+import { AuthController } from '../controllers/auth.controller'
+import { validationMiddleWare } from '../middlewares/validation.middleware'
+import { authMiddleWare } from '../middlewares/auth.middleware'
 
 const router = Router()
 
-router.get('/activate/:link')
-router.get('/refresh')
+const { activate, remove, edit, login, logout, refresh, registration } = AuthController
 
-router.post(
-  '/registration',
-  body('email').isEmail(),
-  body('password').isLength({ min: 8, max: 32 })
-)
-router.post('/login')
-router.post('/logout')
+router.get('/activate/:activationId', activate)
+router.get('/refresh', refresh)
 
-router.patch('/edit')
+router.post('/login', login)
+router.post('/logout', logout)
+router.post('/registration', validationMiddleWare(), registration)
 
-router.delete('/remove/:id')
+router.patch('/edit', authMiddleWare, edit)
+
+router.delete('/remove', authMiddleWare, remove)
 
 export const AuthRouter = router

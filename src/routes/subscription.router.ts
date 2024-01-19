@@ -1,17 +1,18 @@
 import { Router } from 'express'
 
-import { SubscriptionConstroller } from '../controllers/subscription.controller'
+import { SubscriptionController } from '../controllers/subscription.controller'
+import { authMiddleWare } from '../middlewares/auth.middleware'
 
 const router = Router()
 
-const { change, check, getAll, getLength, getOne, getVideos } = SubscriptionConstroller
+const { change, check, getAll, getLength, getOne, getVideos } = SubscriptionController
 
-router.get('/', getAll)
-router.get('/video/:videoId', getVideos)
-router.get('/:userId', getOne)
-router.get('/check/:userId', check)
-router.get('/length/:userId', getLength)
+router.get('/', authMiddleWare, getAll)
+router.get('/:channelId', authMiddleWare, getOne)
+router.get('/get/video', authMiddleWare, getVideos)
+router.get('/check/:channelId', authMiddleWare, check)
+router.get('/length/:channelId', authMiddleWare, getLength)
 
-router.post('/change', change)
+router.post('/change', authMiddleWare, change)
 
 export const SubscriptionRouter = router

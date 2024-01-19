@@ -3,58 +3,62 @@ import jwt from 'jsonwebtoken'
 import { TokenModel } from '../../models/index.model'
 
 class TokenService_class {
-	async genereteTokens(payload: any) {
-		const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET_KEY, {
-			expiresIn: '30m'
-		})
-		const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET_KEY, {
-			expiresIn: '30d'
-		})
+  async generate(payload: Object) {
+    const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET_KEY, {
+      expiresIn: '10m',
+    })
+    const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET_KEY, {
+      expiresIn: '10d',
+    })
 
-		return {
-			accessToken,
-			refreshToken
-		}
-	}
+    return { accessToken, refreshToken }
+  }
 
-	validateAccessToken(token: string) {
-		try {
-			const accessToken = jwt.verify(token, process.env.JWT_ACCESS_SECRET_KEY)
-			return accessToken
-		} catch (error) {
-			return null
-		}
-	}
+  validateAccessToken(token: string) {
+    try {
+      const accessToken = jwt.verify(token, process.env.JWT_ACCESS_SECRET_KEY)
 
-	validateRefreshToken(token: string) {
-		try {
-			const refreshToken = jwt.verify(token, process.env.JWT_REFRESH_SECRET_KEY)
-			return refreshToken
-		} catch (error) {
-			return null
-		}
-	}
+      return accessToken
+    } catch (error) {
+      return null
+    }
+  }
 
-	async saveToken(userId: number, refreshToken: string) {
-		const tokenData = await TokenModel.findOne({ where: { userId } })
+  validateRefreshToken(token: string) {
+    try {
+      const refreshToken = jwt.verify(token, process.env.JWT_REFRESH_SECRET_KEY)
 
-		if (tokenData) {
-			return await tokenData.update({ refreshToken })
-		}
+      return refreshToken
+    } catch (error) {
+      return null
+    }
+  }
 
-		const token = await TokenModel.create({ userId, refreshToken })
-		return token
-	}
+  async save(userId: number, refreshToken: string) {
+    const tokenData = await TokenModel.findOne({ where: { userId } })
 
-	async removeToken(refreshToken: string) {
-		const token = await TokenModel.destroy({ where: { refreshToken } })
-		return token
-	}
+    if (tokenData) {
+      const token = await tokenData.update({ refreshToken })
 
-	async findToken(refreshToken: string) {
-		const tokenData = await TokenModel.findOne({ where: { refreshToken } })
-		return tokenData
-	}
+      return token
+    }
+
+    const token = await TokenModel.create({ userId, refreshToken })
+
+    return token
+  }
+
+  async remove(refreshToken: string) {
+    await TokenModel.destroy({ where: { refreshToken } })
+
+    return true
+  }
+
+  async find(refreshToken: string) {
+    const tokenData = await TokenModel.findOne({ where: { refreshToken } })
+    
+    return tokenData
+  }
 }
 
 export const TokenService = new TokenService_class()

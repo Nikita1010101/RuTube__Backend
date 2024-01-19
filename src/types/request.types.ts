@@ -1,7 +1,9 @@
-import { Request } from "express";
+import { TLike } from './like.types'
+import { TSubscription } from './subscription.types'
+import { TVideoSortingKeys } from './video.types'
 
-import { IUser } from "./user.types";
+export type TParsedQs = { [key: string]: undefined | string | string[] | TParsedQs | TParsedQs[] }
 
-export type TRequest = Request & { user: IUser }
-
-export interface ParsedQs { [key: string]: undefined | string | string[] | ParsedQs | ParsedQs[] }
+export type TLikeQuery = TParsedQs & TLike
+export type TSubscriptionQuery = TParsedQs & TSubscription
+export type TVideoQuery = TParsedQs & { _search: string, _sort: TVideoSortingKeys }

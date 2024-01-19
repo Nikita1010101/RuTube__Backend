@@ -6,7 +6,5 @@ export const likeModel_instance = {
 		primaryKey: true,
 		autoIncrement: true,
 		allowNull: false
-	},
-	userId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
-	videoId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false }
+	}
 }

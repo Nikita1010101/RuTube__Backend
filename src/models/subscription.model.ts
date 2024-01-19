@@ -1,12 +1,10 @@
 import { DataTypes } from 'sequelize'
 
-export const subscriptionModel_instance =  {
-	id: {
-		type: DataTypes.INTEGER,
-		primaryKey: true,
-		autoIncrement: true,
-		allowNull: false
-	},
-	userId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
-	channelId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false }
+export const subscriptionModel_instance = {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+    allowNull: false,
+  },
 }
